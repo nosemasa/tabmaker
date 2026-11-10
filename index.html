@@ -1,0 +1,594 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+  <meta http-equiv="Pragma" content="no-cache">
+  <meta http-equiv="Expires" content="0">
+  <title>TabMaker - ギタリスト向けタブ譜作成・共有アプリ</title>
+  <meta name="description" content="直感的にギタータブ譜を作成し、GoogleスプレッドシートやPDFでバンドメンバーと瞬時に共有できるWebアプリケーション">
+  <link rel="icon" type="image/png" href="./favicon.png">
+  <link rel="apple-touch-icon" href="./icon-192.png">
+  <link rel="manifest" href="./manifest.json">
+  <meta name="theme-color" content="#0f172a">
+  <script type="module" crossorigin src="./assets/index-wZ7-sADX.js"></script>
+  <link rel="stylesheet" crossorigin href="./assets/index-CDiOwMks.css">
+</head>
+<body>
+
+  <!-- 固定上部ナビゲーションコンテナ -->
+  <header class="app-header-container">
+    <!-- メインヘッダーバー -->
+    <div class="app-header">
+      <div class="brand-section">
+        <div class="brand-logo">🎸</div>
+        <div class="brand-info">
+          <h1>TabMaker</h1>
+          <div class="tagline">ギタータブ譜作成＆バンド共有</div>
+        </div>
+      </div>
+
+      <!-- 楽曲メタデータ -->
+      <div class="song-meta-controls">
+        <div class="meta-field">
+          <label for="song-title-input">曲名</label>
+          <input type="text" id="song-title-input" class="meta-input title-input" placeholder="曲名を入力" value="壊れた空 (サンプルタブ譜)">
+        </div>
+        <div class="meta-field">
+          <label for="song-artist-input">アーティスト</label>
+          <input type="text" id="song-artist-input" class="meta-input artist-input" placeholder="アーティスト名" value="Sample Band">
+        </div>
+        <div class="meta-field">
+          <label for="song-bpm-input">BPM</label>
+          <input type="number" id="song-bpm-input" class="meta-input bpm-input" min="30" max="300" value="96">
+        </div>
+      </div>
+
+      <!-- ヘッダー右側アクションボタン群 -->
+      <div class="header-actions">
+        <!-- 履歴操作 (Undo / Redo: 常に手元で操作できるよう最前列に配置) -->
+        <div class="history-btn-group">
+          <button id="undo-btn" class="btn btn-icon-only btn-history" title="元に戻す (Ctrl+Z) - 変更なし" aria-label="元に戻す" disabled>↩️</button>
+          <button id="redo-btn" class="btn btn-icon-only btn-history" title="やり直す (Ctrl+Y) - 履歴なし" aria-label="やり直す" disabled>↪️</button>
+        </div>
+
+        <!-- セクション追加 -->
+        <button id="add-section-btn" class="btn btn-primary" title="新しいセクションを追加">
+          +セクション
+        </button>
+
+        <!-- コードセクション追加 -->
+        <button id="add-chord-section-btn" class="btn btn-primary" title="コード入力行だけのセクションを追加（デフォルト1行・4小節）">
+          +コードセクション
+        </button>
+
+        <!-- 省略セクション追加 -->
+        <button id="add-compact-section-btn" class="btn btn-primary" title="セクション名だけの省略バーを追加">
+          +省略セクション
+        </button>
+
+        <!-- 出力ドロップダウンメニュー -->
+        <div class="dropdown-container" id="export-dropdown-container">
+          <button id="export-dropdown-btn" class="btn btn-success dropdown-trigger" type="button" aria-haspopup="true" aria-expanded="false" title="スプレッドシートやPDFを出力">
+            <span>📤 出力</span>
+            <span class="dropdown-caret">▾</span>
+          </button>
+          <div class="dropdown-menu" id="export-dropdown-menu">
+            <button id="export-excel-btn" class="dropdown-item" type="button" title="Googleスプレッドシート完全互換の.xlsxを即座に出力・保存します">
+              <span class="dropdown-item-icon">📊</span>
+              <div class="dropdown-item-content">
+                <span class="dropdown-item-title">スプレッドシート用出力</span>
+                <span class="dropdown-item-desc">Googleスプレッドシート互換 (.xlsx)</span>
+              </div>
+            </button>
+            <button id="export-pdf-btn" class="dropdown-item" type="button" title="A4印刷・PDF保存を実行します">
+              <span class="dropdown-item-icon">📄</span>
+              <div class="dropdown-item-content">
+                <span class="dropdown-item-title">PDF出力 / A4印刷</span>
+                <span class="dropdown-item-desc">A4縦・横の印刷プレビュー</span>
+              </div>
+            </button>
+          </div>
+        </div>
+
+        <!-- プロジェクト保存 -->
+        <button id="save-project-btn" class="btn btn-save" title="入力した曲名でプロジェクトを保存 (Ctrl+S)">
+          💾 保存
+        </button>
+
+        <!-- プロジェクト管理ドロップダウンメニュー -->
+        <div class="dropdown-container" id="project-dropdown-container">
+          <button id="project-dropdown-btn" class="btn btn-secondary dropdown-trigger" type="button" aria-haspopup="true" aria-expanded="false" title="曲の管理・複製・新規作成・サンプル">
+            <span>📁 プロジェクト</span>
+            <span class="dropdown-caret">▾</span>
+          </button>
+          <div class="dropdown-menu" id="project-dropdown-menu">
+            <button id="open-projects-btn" class="dropdown-item" type="button" title="保存済みプロジェクト一覧を開く">
+              <span class="dropdown-item-icon">📋</span>
+              <div class="dropdown-item-content">
+                <span class="dropdown-item-title">プロジェクト一覧</span>
+                <span class="dropdown-item-desc">保存した曲の切り替え・管理</span>
+              </div>
+            </button>
+            <button id="duplicate-project-btn" class="dropdown-item" type="button" title="現在開いているプロジェクトを複製して開く">
+              <span class="dropdown-item-icon">📑</span>
+              <div class="dropdown-item-content">
+                <span class="dropdown-item-title">複製</span>
+                <span class="dropdown-item-desc">現在のプロジェクトを複製して開く</span>
+              </div>
+            </button>
+            <button id="new-song-btn" class="dropdown-item" type="button" title="白紙の新規タブ譜を作成">
+              <span class="dropdown-item-icon">📄</span>
+              <div class="dropdown-item-content">
+                <span class="dropdown-item-title">新規作成</span>
+                <span class="dropdown-item-desc">新しい白紙のタブ譜を開く</span>
+              </div>
+            </button>
+            <button id="load-sample-btn" class="dropdown-item" type="button" title="サンプル曲「壊れた空」を読み込む">
+              <span class="dropdown-item-icon">🎵</span>
+              <div class="dropdown-item-content">
+                <span class="dropdown-item-title">サンプル曲</span>
+                <span class="dropdown-item-desc">「壊れた空」のタブ譜を読み込む</span>
+              </div>
+            </button>
+          </div>
+        </div>
+
+        <!-- ヘルプ -->
+        <button id="help-btn" class="btn btn-icon-only" title="使い方と共有方法">❓</button>
+
+        <!-- 出力先フォルダ -->
+        <button id="open-folder-btn" class="btn btn-secondary" title="出力されたファイルが保存されているPCフォルダ（Documents/TabMaker/projects）を開く">
+          📁 出力先フォルダ
+        </button>
+      </div>
+    </div>
+
+    <!-- サブツールバー：スタンプパレット & ガイド -->
+    <div class="sub-toolbar">
+      <div class="toolbar-group">
+        <span class="toolbar-label">スタンプツール:</span>
+        <div class="stamp-chips">
+          <button type="button" class="stamp-chip" data-stamp-type="choke" draggable="true" title="チョーキング記号（c）- ドラッグして小節へ配置できます">
+            <span class="chip-icon">c</span>
+            <span>チョーキング</span>
+          </button>
+          <button type="button" class="stamp-chip" data-stamp-type="line" draggable="true" title="スライド・グリッサンド・サスティン横線 - ドラッグして小節へ配置できます">
+            <span class="chip-icon">─</span>
+            <span>横線 (スライド)</span>
+          </button>
+          <button type="button" class="stamp-chip" data-stamp-type="tie" draggable="true" title="譜面のタイ・スラーの弧線 - ドラッグして小節へ配置できます">
+            <span class="chip-icon">⌒</span>
+            <span>タイ / スラー</span>
+          </button>
+          <button type="button" class="stamp-chip" data-stamp-type="wholeRest" draggable="true" title="全休符マーク - ドラッグして小節へ配置できます">
+            <span class="chip-icon">𝄻</span>
+            <span>全休符</span>
+          </button>
+          <button type="button" class="stamp-chip" data-stamp-type="quarterRest" draggable="true" title="４分休符マーク - ドラッグして小節へ配置できます">
+            <span class="chip-icon">𝄽</span>
+            <span>４分休符</span>
+          </button>
+          <button type="button" class="stamp-chip" data-stamp-type="text" draggable="true" title="自由なテキスト入力 - ドラッグして小節へ配置できます">
+            <span class="chip-icon">T</span>
+            <span>テキスト自由入力</span>
+          </button>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- メイン楽譜キャンバス -->
+  <main id="main-canvas" class="main-canvas">
+    <!-- セクションと小節が動的にレンダリングされます -->
+  </main>
+
+  <!-- エクスポート完了モーダル -->
+  <div id="export-success-modal" class="modal-backdrop">
+    <div class="modal-window">
+      <div class="modal-header">
+        <h3>🎉 スプレッドシート用ファイルを出力しました！</h3>
+        <button class="modal-close-btn">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div style="background: rgba(16, 185, 129, 0.15); border: 1px solid #10b981; border-radius: 8px; padding: 12px 16px; color: #a7f3d0; font-size: 13px;">
+          ✓ Googleスプレッドシート完全互換のExcelファイル (.xlsx) の生成と保存が完了しました。
+        </div>
+
+        <div class="export-option-card">
+          <div class="export-option-info" style="width: 100%;">
+            <h4 id="export-modal-filename" style="word-break: break-all; color: #38bdf8;">TabMaker_Googleスプレッドシート共有用.xlsx</h4>
+            <p id="export-modal-path" style="font-family: monospace; font-size: 11px; margin-top: 4px; color: #94a3b8; word-break: break-all;"></p>
+          </div>
+        </div>
+
+        <!-- Android専用アクションボタン群 -->
+        <div id="export-actions-android" style="display: none; flex-direction: column; gap: 10px; margin-top: 8px;">
+          <button type="button" id="modal-android-share-btn" class="btn btn-primary" style="padding: 12px 18px; font-size: 14px; font-weight: bold; justify-content: center; background: linear-gradient(135deg, #0284c7, #2563eb);">
+            📤 Googleドライブ・他アプリに共有する
+          </button>
+          <button type="button" id="modal-android-settings-btn" class="btn btn-secondary" style="padding: 9px 16px; font-size: 13px; justify-content: center;">
+            ⚙️ 保存・共有設定を確認
+          </button>
+        </div>
+
+        <!-- PC専用アクションボタン群 -->
+        <div id="export-actions-pc" style="display: flex; flex-direction: column; gap: 10px; margin-top: 8px;">
+          <button type="button" id="modal-open-folder-btn" class="btn btn-primary" style="padding: 10px 18px; font-size: 14px;">
+            📁 パソコンの保存フォルダを開く (エクスプローラー)
+          </button>
+          <button type="button" id="modal-select-folder-btn" class="btn btn-secondary" style="padding: 8px 16px; font-size: 13px;">
+            📂 別のフォルダを選択して保存し直す
+          </button>
+          <button type="button" id="modal-open-drive-btn" class="btn btn-success" style="padding: 10px 18px; font-size: 14px;">
+            ☁️ Googleドライブを開いてアップロードする
+          </button>
+          <a id="modal-direct-download-link" class="btn btn-secondary" style="padding: 8px 16px; font-size: 13px; text-decoration: none;" download>
+            📥 ブラウザでもう一度ダウンロード
+          </a>
+        </div>
+
+        <p id="export-modal-guide-text" style="font-size: 12px; color: #64748b; line-height: 1.5; margin-top: 6px;">
+          ※ Googleドライブにこのファイルをアップロードすると、Googleスプレッドシートとしてそのまま開き、バンドメンバーと共有・共同編集できます。
+        </p>
+      </div>
+    </div>
+  </div>
+
+  <!-- 保存先フォルダ設定モーダル -->
+  <div id="folder-settings-modal" class="modal-backdrop">
+    <div class="modal-window">
+      <div class="modal-header">
+        <h3 id="folder-settings-modal-title">📂 スプレッドシート出力先のフォルダ設定</h3>
+        <button class="modal-close-btn">&times;</button>
+      </div>
+      <div class="modal-body">
+        
+        <!-- Android専用セクション -->
+        <div id="folder-modal-android-section" style="display: none;">
+          <div style="background: rgba(56, 189, 248, 0.1); border: 1px solid rgba(56, 189, 248, 0.3); border-radius: 8px; padding: 12px 14px; margin-bottom: 16px; font-size: 13px; color: #e0f2fe; line-height: 1.5;">
+            <div style="font-weight: bold; margin-bottom: 4px; display: flex; align-items: center; gap: 6px;">
+              <span>📱</span> Androidでの保存先と共有について
+            </div>
+            Androidのセキュリティ仕様により、出力ファイルは端末内の安全な共通書類領域<strong>【内部ストレージ &gt; Documents &gt; TabMaker】</strong>に自動保存されます。
+          </div>
+
+          <h4 style="font-size: 13px; color: #94a3b8; margin-bottom: 8px;">保存先フォルダー:</h4>
+          <div style="display: flex; align-items: center; gap: 10px; background: rgba(15, 23, 42, 0.6); padding: 12px 14px; border-radius: 6px; border: 1px solid rgba(255,255,255,0.08); margin-bottom: 16px;">
+            <span style="font-size: 24px;">📁</span>
+            <div>
+              <div style="font-weight: bold; font-size: 13px; color: #f1f5f9;">端末のドキュメント (Documents/TabMaker)</div>
+              <div style="font-size: 11px; color: #94a3b8; margin-top: 2px;">ファイル管理アプリ（Files by Google等）やPC接続時にアクセスできます</div>
+            </div>
+          </div>
+
+          <h4 style="font-size: 13px; color: #94a3b8; margin-bottom: 8px;">出力時の共有設定:</h4>
+          <div style="background: rgba(15, 23, 42, 0.4); padding: 12px 14px; border-radius: 6px; border: 1px solid rgba(255,255,255,0.05); margin-bottom: 16px;">
+            <label style="display: flex; align-items: flex-start; gap: 10px; cursor: pointer;">
+              <input type="checkbox" id="android-auto-share-checkbox" checked style="margin-top: 3px; width: 16px; height: 16px; accent-color: #0284c7;">
+              <div>
+                <div style="font-weight: bold; font-size: 13px; color: #f1f5f9;">書き出し完了時に自動で共有メニューを開く (推奨)</div>
+                <div style="font-size: 11px; color: #94a3b8; margin-top: 2px;">
+                  Googleドライブへ直接アップロードしたり、GoogleスプレッドシートやLINE、メールでバンドメンバーにすぐ送信できます。
+                </div>
+              </div>
+            </label>
+          </div>
+
+          <div style="margin-top: 14px; padding-top: 12px; border-top: 1px solid rgba(255,255,255,0.1); display: flex; justify-content: flex-end;">
+            <button type="button" class="btn btn-primary modal-close-btn" style="padding: 8px 20px;">閉じる</button>
+          </div>
+        </div>
+
+        <!-- PC専用セクション -->
+        <div id="folder-modal-pc-section">
+          <p style="font-size: 13px; color: #cbd5e1; margin-bottom: 12px;">
+            タブ譜のExcelファイル（.xlsx）を出力・保存するパソコン内のフォルダを選択してください。
+          </p>
+
+          <!-- よく使うフォルダ一覧 -->
+          <h4 style="font-size: 13px; color: #94a3b8; margin-bottom: 8px;">よく使うフォルダ（ワンクリックで設定）:</h4>
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 16px;">
+            <button type="button" class="btn btn-secondary preset-folder-btn" data-preset="tabmakerProjects" style="grid-column: span 2; justify-content: flex-start; padding: 10px 12px; text-align: left; border: 1px solid #0284c7; background: rgba(2, 132, 199, 0.15);">
+              <span style="font-size: 18px; margin-right: 8px;">🎸</span>
+              <div>
+                <div style="font-weight: bold; font-size: 13px; color: #38bdf8;">ドキュメント &gt; TabMaker &gt; projects (推奨)</div>
+                <div style="font-size: 10px; color: #94a3b8;" id="preset-path-tabmakerProjects">C:\Users\User\Documents\TabMaker\projects</div>
+              </div>
+            </button>
+            <button type="button" class="btn btn-secondary preset-folder-btn" data-preset="downloads" style="justify-content: flex-start; padding: 10px 12px; text-align: left;">
+              <span style="font-size: 18px; margin-right: 8px;">📥</span>
+              <div>
+                <div style="font-weight: bold; font-size: 13px;">ダウンロード</div>
+                <div style="font-size: 10px; color: #94a3b8;" id="preset-path-downloads">C:\Users\User\Downloads</div>
+              </div>
+            </button>
+            <button type="button" class="btn btn-secondary preset-folder-btn" data-preset="desktop" style="justify-content: flex-start; padding: 10px 12px; text-align: left;">
+              <span style="font-size: 18px; margin-right: 8px;">🖥️</span>
+              <div>
+                <div style="font-weight: bold; font-size: 13px;">デスクトップ</div>
+                <div style="font-size: 10px; color: #94a3b8;" id="preset-path-desktop">C:\Users\User\Desktop</div>
+              </div>
+            </button>
+            <button type="button" class="btn btn-secondary preset-folder-btn" data-preset="documents" style="justify-content: flex-start; padding: 10px 12px; text-align: left;">
+              <span style="font-size: 18px; margin-right: 8px;">📄</span>
+              <div>
+                <div style="font-weight: bold; font-size: 13px;">ドキュメント</div>
+                <div style="font-size: 10px; color: #94a3b8;" id="preset-path-documents">C:\Users\User\Documents</div>
+              </div>
+            </button>
+            <button type="button" class="btn btn-secondary preset-folder-btn" data-preset="appOutput" style="justify-content: flex-start; padding: 10px 12px; text-align: left;">
+              <span style="font-size: 18px; margin-right: 8px;">📁</span>
+              <div>
+                <div style="font-weight: bold; font-size: 13px;">アプリ内 output</div>
+                <div style="font-size: 10px; color: #94a3b8;" id="preset-path-appOutput">output/</div>
+              </div>
+            </button>
+          </div>
+
+          <!-- Windows標準ダイアログ呼び出し -->
+          <h4 style="font-size: 13px; color: #94a3b8; margin-bottom: 8px;">エクスプローラーから参照:</h4>
+          <div style="margin-bottom: 16px;">
+            <button type="button" id="browse-windows-dialog-btn" class="btn btn-primary" style="width: 100%; padding: 10px 16px; font-size: 14px; justify-content: center;">
+              🪟 Windowsのフォルダ参照画面（エクスプローラー）を開く
+            </button>
+          </div>
+
+          <!-- 直接パス入力 -->
+          <h4 style="font-size: 13px; color: #94a3b8; margin-bottom: 8px;">フォルダのパスを直接指定:</h4>
+          <div style="display: flex; gap: 8px;">
+            <input type="text" id="manual-folder-input" class="meta-input" style="flex: 1; font-family: monospace; font-size: 12px;" placeholder="C:\Users\User\...">
+            <button type="button" id="save-manual-folder-btn" class="btn btn-success" style="white-space: nowrap; padding: 6px 14px;">設定する</button>
+          </div>
+
+          <div style="margin-top: 14px; padding-top: 12px; border-top: 1px solid rgba(255,255,255,0.1); display: flex; justify-content: space-between; align-items: center;">
+            <button type="button" id="modal-test-open-btn" class="btn btn-secondary btn-sm">📁 現在の保存先を開く</button>
+            <button type="button" class="btn btn-secondary btn-sm modal-close-btn">閉じる</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- PDF / 印刷設定モーダル -->
+  <div id="print-settings-modal" class="modal-backdrop">
+    <div class="modal-window print-settings-window" style="max-width: 500px;">
+      <div class="modal-header">
+        <h3>📄 PDF / 印刷設定</h3>
+        <button type="button" class="modal-close-btn">&times;</button>
+      </div>
+      <div class="modal-body">
+        <!-- 用紙の向き（デフォルト: A4縦） -->
+        <div class="print-setting-section" style="margin-bottom: 14px;">
+          <label class="print-setting-title" style="display: block; font-size: 12px; font-weight: bold; color: #94a3b8; margin-bottom: 8px;">用紙の向き（デフォルト: A4縦）</label>
+          <div class="print-orientation-cards">
+            <label class="print-orient-card" id="card-orient-portrait">
+              <input type="radio" name="print-orientation-radio" value="portrait" checked>
+              <div class="orient-icon">📄</div>
+              <div class="orient-meta">
+                <div class="orient-name">縦向き (Portrait)</div>
+                <div class="orient-desc">A4縦・標準（推奨）</div>
+              </div>
+            </label>
+            <label class="print-orient-card" id="card-orient-landscape">
+              <input type="radio" name="print-orientation-radio" value="landscape">
+              <div class="orient-icon">📑</div>
+              <div class="orient-meta">
+                <div class="orient-name">横向き (Landscape)</div>
+                <div class="orient-desc">A4横・ワイド表示</div>
+              </div>
+            </label>
+          </div>
+        </div>
+
+        <!-- 用紙サイズ & 1行あたりの小節数 -->
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 14px;">
+          <div class="print-setting-section">
+            <label for="print-page-size-select" style="display: block; font-size: 12px; font-weight: bold; color: #94a3b8; margin-bottom: 6px;">用紙サイズ</label>
+            <select id="print-page-size-select" class="meta-input" style="width: 100%; font-size: 13px;">
+              <option value="A4" selected>A4 (210 × 297 mm)</option>
+              <option value="B5">B5 (182 × 257 mm)</option>
+              <option value="Letter">レター (Letter)</option>
+            </select>
+          </div>
+
+          <div class="print-setting-section">
+            <label for="print-measures-per-row-select" style="display: block; font-size: 12px; font-weight: bold; color: #94a3b8; margin-bottom: 6px;">1行あたりの小節数</label>
+            <select id="print-measures-per-row-select" class="meta-input" style="width: 100%; font-size: 13px;">
+              <option value="4" selected>4小節 / 行（標準）</option>
+              <option value="3">3小節 / 行（ゆったり）</option>
+              <option value="2">2小節 / 行（大きく表示）</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- 印刷余白 & 表示オプション -->
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 12px;">
+          <div class="print-setting-section">
+            <label for="print-margin-select" style="display: block; font-size: 12px; font-weight: bold; color: #94a3b8; margin-bottom: 6px;">印刷余白</label>
+            <select id="print-margin-select" class="meta-input" style="width: 100%; font-size: 13px;">
+              <option value="10mm" selected>標準 (10mm)</option>
+              <option value="6mm">狭い (6mm)</option>
+              <option value="0mm">余白なし (0mm)</option>
+            </select>
+          </div>
+
+          <div class="print-setting-section">
+            <label style="display: block; font-size: 12px; font-weight: bold; color: #94a3b8; margin-bottom: 6px;">表示項目</label>
+            <div style="display: flex; flex-direction: column; gap: 6px; padding-top: 4px;">
+              <label style="font-size: 12px; color: #cbd5e1; cursor: pointer; display: flex; align-items: center; gap: 6px;">
+                <input type="checkbox" id="print-opt-header" checked> 曲名・BPMヘッダー
+              </label>
+              <label style="font-size: 12px; color: #cbd5e1; cursor: pointer; display: flex; align-items: center; gap: 6px;">
+                <input type="checkbox" id="print-opt-footer" checked> セクション末尾テキスト
+              </label>
+            </div>
+          </div>
+        </div>
+
+        <div style="background: rgba(56, 189, 248, 0.08); border: 1px solid rgba(56, 189, 248, 0.25); border-radius: 6px; padding: 10px 12px; font-size: 12px; color: #cbd5e1; line-height: 1.5;">
+          <div style="font-weight: 700; color: #38bdf8; margin-bottom: 3px; display: flex; align-items: center; gap: 4px;">
+            <span>📱</span> AndroidでのPDF保存方法
+          </div>
+          印刷画面が開いたら、右上のプリンター選択で「<strong>PDF形式で保存</strong>」を選び、右上の保存（💾 / 📥）ボタンをタップするとスマホにPDFが保存されます。
+        </div>
+      </div>
+
+      <!-- 固定フッター（スマホでも必ず押しやすい位置に常時表示） -->
+      <div class="modal-footer" style="padding: 12px 18px; border-top: 1px solid rgba(255,255,255,0.1); background: rgba(15, 23, 42, 0.6); display: flex; justify-content: flex-end; gap: 10px; flex-shrink: 0;">
+        <button type="button" class="btn btn-secondary btn-sm modal-close-btn" style="font-size: 13px; padding: 8px 16px;">キャンセル</button>
+        <button type="button" id="execute-print-btn" class="btn btn-primary" style="padding: 8px 18px; font-weight: 700;">
+          🖨️ 印刷プレビュー / PDF保存
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ヘルプモーダル -->
+  <div id="help-modal" class="modal-backdrop">
+    <div class="modal-window">
+      <div class="modal-header">
+        <h3>🎸 TabMaker の使い方＆共有ガイド</h3>
+        <button class="modal-close-btn">&times;</button>
+      </div>
+      <div class="modal-body">
+        <!-- 画像付き詳細マニュアル（Web / PDF）への目立つリンクエリア -->
+        <div style="background: linear-gradient(135deg, rgba(2, 132, 199, 0.22), rgba(37, 99, 235, 0.18)); border: 1.5px solid #38bdf8; border-radius: 10px; padding: 14px 16px; display: flex; flex-direction: column; gap: 10px;">
+          <a href="./manual.html" target="_blank" rel="noopener noreferrer" class="btn btn-primary" style="width: 100%; padding: 12px 16px; font-size: 14px; font-weight: 800; justify-content: center; text-decoration: none; background: linear-gradient(135deg, #0284c7, #2563eb); box-shadow: 0 4px 14px rgba(37, 99, 235, 0.4); box-sizing: border-box;">
+            📖 画像付き詳細マニュアルを開く（Web / PDF）
+          </a>
+          <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px; font-size: 12px; color: #cbd5e1;">
+            <span>画面写真付きで全機能・PWA追加手順を詳しく解説しています</span>
+            <a href="./manual.pdf" target="_blank" rel="noopener noreferrer" style="color: #38bdf8; font-weight: 700; text-decoration: underline;">
+              📄 PDF版を直接開く
+            </a>
+          </div>
+        </div>
+
+        <div class="export-option-card">
+          <div class="export-option-info">
+            <h4>６弦分のタブ入力</h4>
+            <p>各セルをクリックまたは矢印キーで移動し、半角数字（0〜99）を入力できます。入力と同時にギター音が再生されます（ダブルクリック / ダブルタップで削除）。</p>
+          </div>
+        </div>
+
+        <div class="export-option-card">
+          <div class="export-option-info">
+            <h4>半小節ごとの分割数調整 (1〜16分割)</h4>
+            <p>小節上部の「前半」「後半」の［−］［＋］ボタンで、半小節ごとに分割数を自由に変更できます（デフォルト4、最小1、最大16）。全音符・2分音符から3連符・16分音符のフレーズまで自在に作成可能です。</p>
+          </div>
+        </div>
+
+        <div class="export-option-card">
+          <div class="export-option-info">
+            <h4>コード入力（直打ち）</h4>
+            <p>小節のすぐ上にあるコード行の好きな場所をクリックすると、直接コード（Am7, C, D/F#など）を入力できます。配置したコードはドラッグで位置を微調整できます。</p>
+          </div>
+        </div>
+
+        <div class="export-option-card">
+          <div class="export-option-info">
+            <h4>スタンプ機能（サイズ・角度のドラッグ変更）</h4>
+            <p>上部ツールバーのスタンプ（c, 横線, タイ, 全休符, 4分休符, 自由テキスト）を選んで小節内をクリックすると配置されます。配置したスタンプはドラッグで移動、角の丸でリサイズ、上部のオレンジ丸で角度を自由に変えられます。</p>
+          </div>
+        </div>
+
+        <div class="export-option-card">
+          <div class="export-option-info">
+            <h4>セクション管理（+セクション / +コードセクション / +省略セクション）</h4>
+            <p>通常のセクションに加え、コード入力行だけの「+コードセクション」や、セクション名と末尾テキストだけの「+省略セクション」を追加できます。外枠の丸アイコンや小節の丸アイコンからカラーも自由に変更できます。</p>
+          </div>
+        </div>
+
+        <div class="export-option-card">
+          <div class="export-option-info">
+            <h4>バンドメンバーとの共有（Googleドライブ / PDF）</h4>
+            <p>「📊 スプレッドシート用出力」を押すと、Googleスプレッドシートに完全対応したExcelファイル（.xlsx）がダウンロードされます。Googleドライブにドラッグ＆ドロップするだけで、バンドメンバーと共同編集・閲覧できます。また「📄 PDF出力」で綺麗なA4楽譜として印刷・保存できます。</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- プロジェクト一覧・管理モーダル -->
+  <div id="project-manager-modal" class="modal-backdrop">
+    <div class="modal-window project-modal-window">
+      <div class="modal-header">
+        <h3>📁 プロジェクト一覧・管理</h3>
+        <button class="modal-close-btn">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div class="project-modal-top-actions">
+          <button id="modal-save-current-btn" class="btn btn-save" title="現在編集中の曲名でプロジェクトを保存">
+            💾 現在の曲を保存
+          </button>
+          <button id="modal-duplicate-current-btn" class="btn btn-secondary" title="現在開いているプロジェクトを複製して開く">
+            📑 現在の曲を複製
+          </button>
+          <button id="modal-import-file-btn" class="btn btn-secondary" title="PCやスマホ内のファイル (.tabmaker / .json) を開く">
+            📥 ファイルから開く
+          </button>
+          <button id="modal-new-project-btn" class="btn btn-secondary" title="新しい白紙のタブ譜を作成">
+            ➕ 新規作成
+          </button>
+        </div>
+
+        <div class="project-list-section">
+          <div class="project-list-header">
+            <h4>保存済みプロジェクト</h4>
+            <span id="project-list-count" class="project-count-badge">0件</span>
+          </div>
+          <div id="projects-list-container" class="projects-list-container">
+            <!-- プロジェクト一覧が動的にレンダリングされます -->
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- コード編集・新規入力モーダル -->
+  <div id="chord-edit-modal" class="modal-backdrop">
+    <div class="modal-window chord-modal-window">
+      <div class="modal-header">
+        <h3 id="chord-modal-title">🎵 コードの編集</h3>
+        <button id="btn-close-chord-modal" class="modal-close-btn">&times;</button>
+      </div>
+      <div class="modal-body chord-modal-body">
+        <label for="chord-edit-input" class="chord-modal-label">コード名 (直打ち入力):</label>
+        <div class="chord-input-wrap">
+          <input type="text" id="chord-edit-input" class="chord-modal-input" placeholder="例: Am7, C, D/F#, Fmaj7" autocomplete="off" />
+        </div>
+        
+        <div class="quick-chord-section">
+          <span class="quick-chord-label">よく使うコード:</span>
+          <div class="quick-chord-chips">
+            <button type="button" class="quick-chord-btn">C</button>
+            <button type="button" class="quick-chord-btn">G</button>
+            <button type="button" class="quick-chord-btn">Am</button>
+            <button type="button" class="quick-chord-btn">Am7</button>
+            <button type="button" class="quick-chord-btn">F</button>
+            <button type="button" class="quick-chord-btn">Fmaj7</button>
+            <button type="button" class="quick-chord-btn">Em</button>
+            <button type="button" class="quick-chord-btn">Em7</button>
+            <button type="button" class="quick-chord-btn">Dm</button>
+            <button type="button" class="quick-chord-btn">Dm7</button>
+            <button type="button" class="quick-chord-btn">D/F#</button>
+          </div>
+        </div>
+      </div>
+      <div class="chord-modal-footer">
+        <button type="button" id="btn-delete-chord" class="btn-chord-danger" title="このコードを削除">🗑️ 削除</button>
+        <div class="chord-modal-footer-right">
+          <button type="button" id="btn-cancel-chord" class="btn btn-secondary">キャンセル</button>
+          <button type="button" id="btn-save-chord" class="btn btn-primary">💾 決定</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 隠しファイル入力要素 -->
+  <input type="file" id="project-file-input" accept=".tabmaker,.json" style="display: none;">
+
+</body>
+</html>
